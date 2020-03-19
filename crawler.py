@@ -1,6 +1,8 @@
 import urllib.request as req
 import numpy as np
 import bs4
+import sys   
+sys.setrecursionlimit(1000000)
 
 
 PTT_URL_HEAD = "https://www.ptt.cc"
@@ -44,7 +46,7 @@ def get_hot_article(hot_boards_url):
 				hot_article_raw_data = get_hot_article_raw_data(url)
 				hot_article.append(hot_article_raw_data)
 	
-def get_hot_article_raw_data(url)
+def get_hot_article_raw_data(url):
 	article_info = []
 	contect = []
 	comment_data = []
@@ -52,48 +54,59 @@ def get_hot_article_raw_data(url)
 	comment_author_ids = []
 	comment_times = []
 	replies = []
+	temp = []
 
 	article_data = open_web(url)
 	datas = article_data.find_all("div", class_="article-metaline")
 	for data in datas:
-		article_data.append(data.text[2:])
+		temp.append(data.text[2:])
+	author = temp[0]
 
-	s = article_data[0].find("(")
-	e = article_data[0].find(")")
-	author_id = article_data[0][:s-1]
-	author_name = article_data[0][s+1:e]
-	article_title = article_data[1]
-	published_time = article_data[2]
+	#article data(author id, name, title, published time, url)
+	s = author.find("(")
+	e = author.find(")")
+	author_id = temp[0][:s-1]
+	author_name = temp[0][s+1:e]
+	article_title = temp[1]
+	published_time = temp[2]
 	article_url = url
 
+	#get contect
+	contect_start = article_data.text.find(published_time)+24
+	contect_end = article_data.text.find("※ 發信站: 批踢踢實業坊(ptt.cc)")
+	contect = article_data.text[contect_start:contect_end]
 
-	pushes = web_data.find_all("div", class_="push")
+	#comment data(tag, author id, comment, published time)
+	pushes = article_data.find_all("div", class_="push")
 	for push in pushes:
-	try:
-		times.append(push.find("span", class_ = "push-ipdatetime").string[-11:-1])
-	except:
-		times.append(np.nan)
+		try:
+			comment_times.append(push.find("span", class_ = "push-ipdatetime").string[-11:-1])
+		except:
+			comment_times.append(np.nan)
 
-	try:
-		tags.append(push.find("span", class_ = "push-tag").string)
-	except:
-		tags.append(np.nan)
+		try:
+			tags.append(push.find("span", class_ = "push-tag").string)
+		except:
+			tags.append(np.nan)
         
-	try:
-		author_ids.append(push.find("span", class_ = "f3 hl push-userid").string)
-	except:
-		author_ids.append(np.nan)
+		try:
+			comment_author_ids.append(push.find("span", class_ = "f3 hl push-userid").string)
+		except:
+			comment_author_ids.append(np.nan)
 	
-	try:
-		replies.append(push.find("span", class_ = "f3 push-content").string[2:])
-	except:
-		replies.append(np.nan)
+		try:
+			replies.append(push.find("span", class_ = "f3 push-content").string[2:])
+		except:
+			replies.append(np.nan)
 
-for index in range(len(times)):
-	comment_data.append([tags[index], author_ids[index], replies[index], times[index]])
-
-
-	return author_id, author_name, article_title, published_time, contect, article_url, comment_data
+	for index in range(len(comment_times)):
+		comment_data.append([tags[index], comment_author_ids[index], replies[index], comment_times[index]])
+	# print(author_id)
+	# print(author_name)
+	# print(article_title)
+	# print(article_url)
+	save_npy_data([author_id, author_name, article_title, published_time, contect, article_url, comment_data], "C:/Users/user/Documents/PTT/"+author_id+"_"+published_time.replace(":","_"))
+	return [author_id, author_name, article_title, published_time, contect, article_url, comment_data]
 
 url = get_hotboard_url()
 get_hot_article(url)
