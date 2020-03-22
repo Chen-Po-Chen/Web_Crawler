@@ -298,4 +298,3 @@ def main():
 		close_data_base(data_base)
 
 main()
-# a, b = get_hot_article_raw_data("https://www.ptt.cc/bbs/Stock/M.1541252211.A.8BE.html")
